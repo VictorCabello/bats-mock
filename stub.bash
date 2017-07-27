@@ -9,6 +9,7 @@ stub() {
   shift
 
   export "${prefix}_STUB_PLAN"="${BATS_MOCK_TMPDIR}/${program}-stub-plan"
+  export "${prefix}_STUB_ARG"="${BATS_MOCK_TMPDIR}/${program}-stub-arg"
   export "${prefix}_STUB_RUN"="${BATS_MOCK_TMPDIR}/${program}-stub-run"
   export "${prefix}_STUB_END"=
 
@@ -27,9 +28,24 @@ unstub() {
   export "${prefix}_STUB_END"=1
 
   local STATUS=0
-  "$path" || STATUS="$?"
+  "$path" "verify_bats_mock_on_unstub" || STATUS="$?"
+  
+  local arguments_file="${BATS_MOCK_TMPDIR}/${program}-stub-arg"
+  local plan_file="${BATS_MOCK_TMPDIR}/${program}-stub-plan"
+  if [ $STATUS -ne 0]; then
+      if [ ! -f "$arguments_file" ]; then
+          >&2 echo "Program never invoked"
+      fi
+      >&2 echo "Planned:"
+      >&2 cat  "$plan_file"
+      >&2 echo "VS Real Invocations:"
+      >&2 cat  "$arguments_file"
+  fi
 
   rm -f "$path"
-  rm -f "${BATS_MOCK_TMPDIR}/${program}-stub-plan" "${BATS_MOCK_TMPDIR}/${program}-stub-run"
+  rm -f "$plan_file"
+  rm -f "$arguments_file"
+  rm -f "${BATS_MOCK_TMPDIR}/${program}-stub-run"
+
   return "$STATUS"
 }

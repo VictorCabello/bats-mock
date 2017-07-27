@@ -6,6 +6,7 @@ program="${0##*/}"
 PROGRAM="$(echo "$program" | tr a-z- A-Z_)"
 
 _STUB_PLAN="${PROGRAM}_STUB_PLAN"
+_STUB_ARG="${PROGRAM}_STUB_ARG"
 _STUB_RUN="${PROGRAM}_STUB_RUN"
 _STUB_INDEX="${PROGRAM}_STUB_INDEX"
 _STUB_RESULT="${PROGRAM}_STUB_RESULT"
@@ -31,6 +32,13 @@ index=0
 while IFS= read -r line; do
   index=$(($index + 1))
 
+  # Store arguments to send an error message on unstub function
+  arguments=("$@")
+  if [ $1 != "verify_bats_mock_on_unstub" ]; then
+    printf '%s\n' "${my_array[@]}" >>  "${!_STUB_ARG}"
+    echo "" >> "${!_STUB_ARG}"
+  fi
+
   if [ -z "${!_STUB_END}" ] && [ $index -eq "${!_STUB_INDEX}" ]; then
     # We found the plan line we're interested in.
     # Start off by assuming success.
@@ -50,7 +58,6 @@ while IFS= read -r line; do
     set -f
     patterns=($patterns)
     set +f
-    arguments=("$@")
 
     # Match the expected argument patterns to actual
     # arguments.
